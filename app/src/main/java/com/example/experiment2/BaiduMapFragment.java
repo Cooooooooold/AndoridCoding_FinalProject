@@ -64,22 +64,6 @@ public class BaiduMapFragment extends Fragment {
                 .build();
 
         mapView.getMap().setMapStatus(MapStatusUpdateFactory.newMapStatus(mMapStatus));
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                HttpDataLoader dataLoader=new HttpDataLoader();
-//                String shopJsonData= dataLoader.getHttpData("http://file.nidama.net/class/mobile_develop/data/bookstore2022.json");
-//                List<ShopLocation> locations=dataLoader.ParseJsonData(shopJsonData);
-//
-//                BaiduMapFragment.this.getActivity().runOnUiThread(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        AddMarkersOnMap(locations);
-//                    }
-//                });
-//            }
-//        }).start();
-
 
         mapView.getMap().setOnMarkerClickListener(new BaiduMap.OnMarkerClickListener() {
             @Override
