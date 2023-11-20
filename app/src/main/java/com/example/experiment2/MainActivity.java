@@ -1,67 +1,203 @@
 package com.example.experiment2;
 
 import android.os.Bundle;
+import android.util.Log;
+import android.view.Menu;
+import android.view.View;
+import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.PopupMenu;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.Lifecycle;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 import androidx.viewpager2.widget.ViewPager2;
 
+import com.example.experiment2.TopUI.DailyTaskFragment;
+import com.example.experiment2.TopUI.NormalTaskFragment;
+import com.example.experiment2.TopUI.WeeklyTaskFragment;
+import com.example.experiment2.BottomUI.MesFragment;
+import com.example.experiment2.BottomUI.MissionsFragment;
+import com.example.experiment2.BottomUI.RewardsFragment;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
-public class MainActivity extends AppCompatActivity{
-    private String []tabHeaderStrings = {"Shopping items","Tencentmap","News"};
+public class MainActivity extends AppCompatActivity {
+    private BottomNavigationView bottomNav;
+    private MissionsFragment missionsFragment;
+    private RewardsFragment rewardsFragment;
+    private MesFragment mesFragment;
+    private Fragment activeFragment;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main_recycleview);
+        setContentView(R.layout.activity_finalproject_main);
 
-        ViewPager2 viewPager = findViewById(R.id.view_pager);
-        TabLayout tabLayout = findViewById(R.id.tab_layout);
 
-        FragmentAdapter pagerAdapter = new FragmentAdapter(getSupportFragmentManager(), getLifecycle());
-        viewPager.setAdapter(pagerAdapter);
+        bottomNav = findViewById(R.id.bottom_navigation);
 
-        new TabLayoutMediator(tabLayout, viewPager,
-                (tab, position) -> tab.setText(tabHeaderStrings[position])
-            // 设置TabLayout的标题
-        ).attach();
+        // 如果 savedInstanceState 不为 null，说明 Activity 正在重新创建
+
+        if (savedInstanceState != null) {
+            // 从保存的状态中恢复 Fragment 实例
+            missionsFragment = (MissionsFragment) getSupportFragmentManager().findFragmentByTag("Missions");
+            rewardsFragment = (RewardsFragment) getSupportFragmentManager().findFragmentByTag("Rewards");
+            mesFragment = (MesFragment) getSupportFragmentManager().findFragmentByTag("Mes");
+            // 恢复当前显示的 Fragment
+            activeFragment = getSupportFragmentManager().getFragment(savedInstanceState, "activeFragment");
+        } else {
+            // 第一次创建 Activity
+            missionsFragment = new MissionsFragment();
+            rewardsFragment = new RewardsFragment();
+            mesFragment = new MesFragment();
+            activeFragment = missionsFragment; // 初始化显示的 Fragment
+        }
+
+        // 显示当前 Fragment
+        getSupportFragmentManager().beginTransaction().replace(R.id.nav_container, activeFragment).commit();
+
+        // 设置底部导航栏的点击事件监听器
+        bottomNav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_item_missions) {
+                switchFragment(missionsFragment);
+                return true;
+            } else if (id == R.id.nav_item_rewards) {
+                switchFragment(rewardsFragment);
+                return true;
+            } else if (id == R.id.nav_item_mes) {
+                switchFragment(mesFragment);
+                return true;
+            }
+            return false;
+        });
+
+        // 找到按钮并设置点击监听器
+        Button addButton = findViewById(R.id.button_addmissions);
+        addButton.setOnClickListener(view -> showMenu(view));
+
     }
 
-    private class FragmentAdapter extends FragmentStateAdapter {
-        private static final int NUM_TABS = 3;
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        // 保存当前显示的 Fragment
+        getSupportFragmentManager().putFragment(outState, "activeFragment", activeFragment);
+    }
 
-        public FragmentAdapter(@NonNull FragmentManager fragmentManager, @NonNull Lifecycle lifecycle) {
-            super(fragmentManager, lifecycle);
+    private void switchFragment(Fragment fragment) {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
 
+        // 隐藏当前活动的 Fragment
+        if (activeFragment != null) {
+            transaction.hide(activeFragment);
         }
 
-        @NonNull
-        @Override
-        public Fragment createFragment(int position) {
-            switch (position) {
-                case 0:
-                    return new ShoppingListFragment();
+        // 如果 Fragment 已经被添加，那么显示它
+        if (fragment.isAdded()) {
+            transaction.show(fragment);
+        } else {
+            // 如果 Fragment 还没被添加，那么添加它
+            transaction.add(R.id.nav_container, fragment);
+        }
+
+        // 提交事务
+        transaction.commit();
+
+        // 更新当前活动的 Fragment
+        activeFragment = fragment;
+    }
+    // 显示菜单的方法
+    private void showMenu(View view) {
+        PopupMenu popupMenu = new PopupMenu(this, view);
+        // 添加菜单项
+        popupMenu.getMenu().add(Menu.NONE, 1, 1, "新建任务");
+        popupMenu.getMenu().add(Menu.NONE, 2, 2, "排序");
+
+        // 设置菜单项点击监听器
+        popupMenu.setOnMenuItemClickListener(item -> {
+            switch (item.getItemId()) {
                 case 1:
-                    return new TencentMapFragment();
+                    // 处理新建任务的点击事件
+                    createNewTask();
+                    return true;
                 case 2:
-                    return new WebViewFragment();
+                    // 处理排序的点击事件
+                    sortTasks();
+                    return true;
                 default:
-                    return null;
+                    return false;
             }
-        }
+        });
+        popupMenu.show();
+    }
+    // 新建任务的方法
+    private void createNewTask() {
 
-        @NonNull
-        @Override
-        public int getItemCount() {
-            return NUM_TABS;
-        }
+        // 创建新的 Fragment 实例
+        NewTaskFragment newTaskFragment = NewTaskFragment.newInstance();
+
+        // 执行 Fragment 事务
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.nav_container, newTaskFragment) // 使用新的 Fragment 替换当前 Fragment
+                .addToBackStack(null) // 将事务添加到返回栈中
+                .commit();
+    }
+
+    // 排序任务的方法
+    private void sortTasks() {
+        // 实现排序任务的逻辑
     }
 }
+//        ViewPager2 viewPager = findViewById(R.id.view_pager);
+//        TabLayout tabLayout = findViewById(R.id.tab_layout);
+//
+//        FragmentAdapter pagerAdapter = new FragmentAdapter(getSupportFragmentManager(), getLifecycle());
+//        viewPager.setAdapter(pagerAdapter);
+//
+//        new TabLayoutMediator(tabLayout, viewPager,
+//                (tab, position) -> tab.setText(tabHeaderStrings[position])
+//            // 设置TabLayout的标题
+//        ).attach();
+//    }
+//
+//    private class FragmentAdapter extends FragmentStateAdapter {
+//        private static final int NUM_TABS = 3;
+//
+//        public FragmentAdapter(@NonNull FragmentManager fragmentManager, @NonNull Lifecycle lifecycle) {
+//            super(fragmentManager, lifecycle);
+//
+//        }
+//
+//        @NonNull
+//        @Override
+//        public Fragment createFragment(int position) {
+//            switch (position) {
+//                case 0:
+//                    return new ShoppingListFragment();
+//                case 1:
+//                    return new TencentMapFragment();
+//                case 2:
+//                    return new WebViewFragment();
+//                default:
+//                    return null;
+//            }
+//        }
+//
+//        @NonNull
+//        @Override
+//        public int getItemCount() {
+//            return NUM_TABS;
+//        }
+//    }
+//}
     /*
     //将 shopItems 和 shopItemAdapter 定义为类的成员变量
     private ArrayList<ShopItem> shopItems = new ArrayList<>();

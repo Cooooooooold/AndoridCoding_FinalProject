@@ -11,10 +11,10 @@ android {
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        ndk {
-            // 设置支持的SO库架构（开发者可以根据需要，选择一个或多个平台的so）
-            "x86"
-        }
+//        ndk {
+//            // 设置支持的SO库架构（开发者可以根据需要，选择一个或多个平台的so）
+//            "x86"
+//        }
     }
     buildTypes {
         release {
@@ -33,7 +33,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
-//    ndkVersion = rootProject.extra["ndkVersion"] as String
+
 }
 dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
@@ -45,5 +45,11 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+
+    implementation ("androidx.recyclerview:recyclerview:1.1.0")
+    implementation ("androidx.cardview:cardview:1.0.0")
+    implementation ("androidx.viewpager2:viewpager2:1.0.0")
+    // 如果你需要图表，可以添加 MPAndroidChart 库
+    implementation ("com.github.PhilJay:MPAndroidChart:v3.1.0")
 }
 
