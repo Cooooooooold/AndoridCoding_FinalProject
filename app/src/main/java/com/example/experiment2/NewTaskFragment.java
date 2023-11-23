@@ -62,6 +62,7 @@ public class NewTaskFragment extends Fragment {
                 getActivity().onBackPressed();
             });
         }
+
         // 设置 Spinner
         Spinner spinner = view.findViewById(R.id.spinner);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(getContext(),
