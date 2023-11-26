@@ -20,6 +20,9 @@
             android:name=".BookitemDetailsActivity"
             android:exported="false" />
         <activity
+            android:name=".TaskItemDetailActivity"
+            android:exported="false"/>
+        <activity
             android:name=".HelloWorld"
             android:exported="false" />
         <activity

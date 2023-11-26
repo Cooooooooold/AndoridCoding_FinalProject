@@ -21,7 +21,7 @@
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/textView_item_name"
+                android:id="@+id/task_item_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/string_item_name"
@@ -30,7 +30,7 @@
                 android:layout_marginTop="60dp"/>
 
             <TextView
-                android:id="@+id/textView_item_price"
+                android:id="@+id/task_item_reward"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/string_item_price"

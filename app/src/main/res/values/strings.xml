@@ -22,5 +22,8 @@
     <string name="new_task_title">新建任务</string>
     <string name="back"><![CDATA[<-]]></string>
     <string name="Finish">完成</string>
+    <string name="Task_item_name">task name</string>
+    <string name="task_item_reward">task reward</string>
+    <string name="Task_number">5</string>
 
 </resources>

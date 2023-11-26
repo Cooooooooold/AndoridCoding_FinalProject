@@ -1,11 +1,9 @@
 package com.example.experiment2;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
-import android.widget.FrameLayout;
 import android.widget.PopupMenu;
 
 import androidx.annotation.NonNull;
@@ -13,21 +11,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
-import androidx.lifecycle.Lifecycle;
-import androidx.viewpager2.adapter.FragmentStateAdapter;
-import androidx.viewpager2.widget.ViewPager2;
 
-import com.example.experiment2.TopUI.DailyTaskFragment;
-import com.example.experiment2.TopUI.NormalTaskFragment;
-import com.example.experiment2.TopUI.WeeklyTaskFragment;
 import com.example.experiment2.BottomUI.MesFragment;
 import com.example.experiment2.BottomUI.MissionsFragment;
 import com.example.experiment2.BottomUI.RewardsFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.tabs.TabLayout;
-import com.google.android.material.tabs.TabLayoutMediator;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity{
     private BottomNavigationView bottomNav;
     private MissionsFragment missionsFragment;
     private RewardsFragment rewardsFragment;
@@ -84,6 +74,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
@@ -126,7 +117,6 @@ public class MainActivity extends AppCompatActivity {
             switch (item.getItemId()) {
                 case 1:
                     // 处理新建任务的点击事件
-                    createNewTask();
                     return true;
                 case 2:
                     // 处理排序的点击事件
@@ -138,18 +128,7 @@ public class MainActivity extends AppCompatActivity {
         });
         popupMenu.show();
     }
-    // 新建任务的方法
-    private void createNewTask() {
 
-        // 创建新的 Fragment 实例
-        NewTaskFragment newTaskFragment = NewTaskFragment.newInstance();
-
-        // 执行 Fragment 事务
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.nav_container, newTaskFragment) // 使用新的 Fragment 替换当前 Fragment
-                .addToBackStack(null) // 将事务添加到返回栈中
-                .commit();
-    }
 
     // 排序任务的方法
     private void sortTasks() {

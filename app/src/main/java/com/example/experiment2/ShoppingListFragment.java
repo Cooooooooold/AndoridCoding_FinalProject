@@ -26,23 +26,13 @@ import com.example.experiment2.data.ShopItem;
 
 import java.util.ArrayList;
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link ShoppingListFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
 public class ShoppingListFragment extends Fragment {
 
     public ShoppingListFragment() {
         // Required empty public constructor
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
 
-     * @return A new instance of fragment ShoppingListFragment.
-     */
     public static ShoppingListFragment newInstance() {
         ShoppingListFragment fragment = new ShoppingListFragment();
         Bundle args = new Bundle();
@@ -216,8 +206,8 @@ public class ShoppingListFragment extends Fragment {
                 // Define click listener for the ViewHolder's View
 
                 //id并不是唯一，记得加view.,要不然找出来的是一个数组
-                textViewName = shopItemView.findViewById(R.id.textView_item_name);
-                textViewPrice = shopItemView.findViewById(R.id.textView_item_price);
+                textViewName = shopItemView.findViewById(R.id.task_item_name);
+                textViewPrice = shopItemView.findViewById(R.id.task_item_reward);
                 imageViewItem =shopItemView.findViewById(R.id.imageView_item);
 
                 shopItemView.setOnCreateContextMenuListener(this);
