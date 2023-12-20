@@ -25,24 +25,15 @@
         android:id="@+id/achievement_points"
         android:layout_width="match_parent"
         android:layout_height="75dp"
-        android:hint="成就点数" />
+        android:hint="成就点数"
+        android:inputType="number"/>
 
     <EditText
         android:id="@+id/number_of_task"
         android:layout_width="match_parent"
         android:layout_height="75dp"
-        android:hint="数量" />
-
-    <EditText
-        android:id="@+id/classify_tasks"
-        android:layout_width="match_parent"
-        android:layout_height="75dp"
-        android:hint="通过标签对任务进行分类" />
-
-    <Spinner
-        android:id="@+id/spinner"
-        android:layout_width="match_parent"
-        android:layout_height="70dp" />
+        android:hint="数量"
+        android:inputType="number"/>
 
     <Button
         android:id="@+id/button_task_items"

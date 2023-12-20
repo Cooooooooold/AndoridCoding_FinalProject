@@ -6,8 +6,12 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
+
+import com.example.experiment2.BottomUI.MissionsFragment;
 
 public class TaskItemDetailActivity extends AppCompatActivity {
 
@@ -19,63 +23,44 @@ public class TaskItemDetailActivity extends AppCompatActivity {
         setContentView(R.layout.activity_taskitem_details);
 
         Intent intent = getIntent();
-        if (null != intent) {
+        if (intent != null) {
             String name = intent.getStringExtra("name");
 
-            if (null != name) {
+            if (name != null) {
                 double points = intent.getDoubleExtra("points", 0);
                 int quantity = intent.getIntExtra("quantity", 0);
-                String category = intent.getStringExtra("category");
-                position = intent.getIntExtra("position", -1);
+                int position = intent.getIntExtra("position", -1);
 
                 EditText editTextTaskName = findViewById(R.id.title_text_view);
                 EditText editTextPoints = findViewById(R.id.achievement_points);
                 EditText editTextQuantity = findViewById(R.id.number_of_task);
-                EditText editTextCategory = findViewById(R.id.classify_tasks);
 
                 editTextTaskName.setText(name);
                 editTextPoints.setText(String.valueOf(points));
                 editTextQuantity.setText(String.valueOf(quantity));
-                editTextCategory.setText(category);
-            }
         }
 
         Button buttonOk = findViewById(R.id.button_task_items);
         buttonOk.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                try {
-                    Intent intent = new Intent();
+                    Intent resultIntent = new Intent();
                     EditText editTextTaskName = findViewById(R.id.title_text_view);
                     EditText editTextPoints = findViewById(R.id.achievement_points);
                     EditText editTextQuantity = findViewById(R.id.number_of_task);
-                    EditText editTextCategory = findViewById(R.id.classify_tasks);
 
-                    // 输入验证
-                    if (editTextTaskName.getText().toString().isEmpty() ||
-                            editTextPoints.getText().toString().isEmpty() ||
-                            editTextQuantity.getText().toString().isEmpty() ||
-                            editTextCategory.getText().toString().isEmpty()) {
-                        // 显示错误消息
-                        return;
-                    }
-
+                    String names = editTextTaskName.getText().toString();
                     double points = Double.parseDouble(editTextPoints.getText().toString());
                     int quantity = Integer.parseInt(editTextQuantity.getText().toString());
+                    resultIntent.putExtra("name", names);
+                    resultIntent.putExtra("points", points);
+                    resultIntent.putExtra("quantity", quantity);
+                    resultIntent.putExtra("position", position);
 
-                    intent.putExtra("name", editTextTaskName.getText().toString());
-                    intent.putExtra("points", points);
-                    intent.putExtra("quantity", quantity);
-                    intent.putExtra("category", editTextCategory.getText().toString());
-                    intent.putExtra("position", position);
-
-                    setResult(Activity.RESULT_OK, intent);
-                    TaskItemDetailActivity.this.finish();
-                } catch (NumberFormatException e) {
-                    // 处理输入格式错误
-                }
+                    setResult(Activity.RESULT_OK, resultIntent);
+                    finish();
             }
         });
-
     }
+}
 }

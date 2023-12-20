@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="fragment_categories">
+        <item>每日任务</item>
+        <item>每周任务</item>
+        <item>普通任务</item>
+    </string-array>
+    <string-array name="task_categories">
+        <item>学习</item>
+        <item>工作</item>
+        <item>复习</item>
+    </string-array>
+</resources>

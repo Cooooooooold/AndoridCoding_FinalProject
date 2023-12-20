@@ -1,12 +1,16 @@
 package com.example.experiment2;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
 import android.widget.PopupMenu;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -15,6 +19,10 @@ import androidx.fragment.app.FragmentTransaction;
 import com.example.experiment2.BottomUI.MesFragment;
 import com.example.experiment2.BottomUI.MissionsFragment;
 import com.example.experiment2.BottomUI.RewardsFragment;
+import com.example.experiment2.TopUI.DailyTaskFragment;
+import com.example.experiment2.TopUI.NormalTaskFragment;
+import com.example.experiment2.TopUI.WeeklyTaskFragment;
+import com.example.experiment2.data.TaskItem;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class MainActivity extends AppCompatActivity{
@@ -32,25 +40,31 @@ public class MainActivity extends AppCompatActivity{
 
         bottomNav = findViewById(R.id.bottom_navigation);
 
-        // 如果 savedInstanceState 不为 null，说明 Activity 正在重新创建
+        // 检查是否重新创建了 Activity
+        if (savedInstanceState == null) {
+            // 第一次创建 Activity 时添加 Fragment
+            missionsFragment = new MissionsFragment();
+            rewardsFragment = new RewardsFragment();
+            mesFragment = new MesFragment();
 
-        if (savedInstanceState != null) {
+            getSupportFragmentManager().beginTransaction()
+                    .add(R.id.nav_container, missionsFragment, "Missions")
+                    .hide(missionsFragment)
+                    .add(R.id.nav_container, rewardsFragment, "Rewards")
+                    .hide(rewardsFragment)
+                    .add(R.id.nav_container, mesFragment, "Mes")
+                    .hide(mesFragment)
+                    .commit();
+            activeFragment = missionsFragment;
+        } else {
             // 从保存的状态中恢复 Fragment 实例
             missionsFragment = (MissionsFragment) getSupportFragmentManager().findFragmentByTag("Missions");
             rewardsFragment = (RewardsFragment) getSupportFragmentManager().findFragmentByTag("Rewards");
             mesFragment = (MesFragment) getSupportFragmentManager().findFragmentByTag("Mes");
-            // 恢复当前显示的 Fragment
             activeFragment = getSupportFragmentManager().getFragment(savedInstanceState, "activeFragment");
-        } else {
-            // 第一次创建 Activity
-            missionsFragment = new MissionsFragment();
-            rewardsFragment = new RewardsFragment();
-            mesFragment = new MesFragment();
-            activeFragment = missionsFragment; // 初始化显示的 Fragment
         }
-
         // 显示当前 Fragment
-        getSupportFragmentManager().beginTransaction().replace(R.id.nav_container, activeFragment).commit();
+        getSupportFragmentManager().beginTransaction().show(activeFragment).commit();
 
         // 设置底部导航栏的点击事件监听器
         bottomNav.setOnItemSelectedListener(item -> {
@@ -71,10 +85,7 @@ public class MainActivity extends AppCompatActivity{
         // 找到按钮并设置点击监听器
         Button addButton = findViewById(R.id.button_addmissions);
         addButton.setOnClickListener(view -> showMenu(view));
-
     }
-
-
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
@@ -83,26 +94,12 @@ public class MainActivity extends AppCompatActivity{
     }
 
     private void switchFragment(Fragment fragment) {
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        FragmentTransaction transaction = fragmentManager.beginTransaction();
-
-        // 隐藏当前活动的 Fragment
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         if (activeFragment != null) {
             transaction.hide(activeFragment);
         }
-
-        // 如果 Fragment 已经被添加，那么显示它
-        if (fragment.isAdded()) {
-            transaction.show(fragment);
-        } else {
-            // 如果 Fragment 还没被添加，那么添加它
-            transaction.add(R.id.nav_container, fragment);
-        }
-
-        // 提交事务
+        transaction.show(fragment);
         transaction.commit();
-
-        // 更新当前活动的 Fragment
         activeFragment = fragment;
     }
     // 显示菜单的方法
@@ -117,6 +114,8 @@ public class MainActivity extends AppCompatActivity{
             switch (item.getItemId()) {
                 case 1:
                     // 处理新建任务的点击事件
+                    Intent intent = new Intent(MainActivity.this, TaskItemDetailActivity.class);
+                    startActivityForResult(intent, REQUEST_CODE_ADD_TASK);
                     return true;
                 case 2:
                     // 处理排序的点击事件
@@ -128,12 +127,25 @@ public class MainActivity extends AppCompatActivity{
         });
         popupMenu.show();
     }
-
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CODE_ADD_TASK && resultCode == Activity.RESULT_OK && data != null) {
+            // 调用 handleTaskResult 方法处理返回的数据
+            if (missionsFragment != null) {
+                missionsFragment.handleTaskResult(data);
+            }
+        }
+    }
 
     // 排序任务的方法
     private void sortTasks() {
         // 实现排序任务的逻辑
     }
+
+    // 这里的 REQUEST_CODE_ADD_TASK 是您启动 TaskItemDetailActivity 时使用的请求码
+    private static final int REQUEST_CODE_ADD_TASK = 1;
+
 }
 //        ViewPager2 viewPager = findViewById(R.id.view_pager);
 //        TabLayout tabLayout = findViewById(R.id.tab_layout);
