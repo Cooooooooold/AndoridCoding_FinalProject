@@ -24,6 +24,7 @@ import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.example.experiment2.BottomUI.MissionsFragment;
 import com.example.experiment2.R;
 import com.example.experiment2.TaskItemDetailActivity;
 import com.example.experiment2.data.DataBank;
@@ -35,6 +36,7 @@ public class WeeklyTaskFragment extends Fragment {
     private TaskItemAdapter taskItemAdapter;
     ActivityResultLauncher<Intent> addItemLauncher;
     ActivityResultLauncher<Intent> updateItemLauncher;
+    private String fragmentType = "WeeklyTaskFragment";
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,9 +48,9 @@ public class WeeklyTaskFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(requireActivity()));
 
         taskItems = new ArrayList<>();
-        taskItems = new DataBank().loadTaskItems(getContext(), "weekly_tasks.data");
+        taskItems = new DataBank().loadweeklyItems(getContext());
         if (0 == taskItems.size()) {
-            taskItems.add(new TaskItem("背单词", 500, 5, "学习"));
+            taskItems.add(new TaskItem("背单词", 500,  "学习",false));
         }
         taskItemAdapter = new TaskItemAdapter(taskItems);
         recyclerView.setAdapter(taskItemAdapter);
@@ -59,23 +61,19 @@ public class WeeklyTaskFragment extends Fragment {
                 result -> {
                     if (result.getResultCode() == Activity.RESULT_OK) {
                         Intent data = result.getData();
-                        if (data != null) {
                             // 检查返回的任务类型是否为 "每周任务"
-                            String fragmentType = data.getStringExtra("fragmentType");
-                            if ("每周任务".equals(fragmentType)) {
+//                            if ("每周任务".equals(fragmentType)) {
                                 // 处理任务数据
                                 String name = data.getStringExtra("name");
-                                double points = data.getDoubleExtra("points", 0);
-                                int quantity = data.getIntExtra("quantity", 0);
+                                 String points = data.getStringExtra("points");
+//                                int quantity = data.getIntExtra("quantity", 0);
                                 String category = data.getStringExtra("category");
-
-                                TaskItem newTask = new TaskItem(name, points, quantity, category);
-                                taskItems.add(newTask);
+                                 int point=Integer.parseInt(points);
+                                taskItems.add(new TaskItem(name, point,category,false));
                                 taskItemAdapter.notifyItemInserted(taskItems.size());
-                                new DataBank().saveTaskItems(requireActivity(), taskItems,"weekly_tasks.data");
+                                new DataBank().saveweeklyItems(requireActivity(), taskItems);
                                 Log.d("WeeklyTaskFragment", "Received fragment type: " + fragmentType);
-                            }
-                        }
+//                            }
                     }
                 }
         );
@@ -101,19 +99,45 @@ public class WeeklyTaskFragment extends Fragment {
         );
         return rootView;
     }
+    @Override
+    public void onResume() {
+        super.onResume();
+        ((MissionsFragment) getParentFragment()).setCurrentActiveFragment(this);
+    }
     public void addTaskItem(TaskItem taskItem) {
         Log.d("WeeklyTaskFragment", "addTaskItem: Adding task: " + taskItem.getName());
         taskItems.add(taskItem);
         taskItemAdapter.notifyItemInserted(taskItems.size() - 1);
-        new DataBank().saveTaskItems(requireActivity(), taskItems, "weekly_tasks.data");
+        new DataBank().saveweeklyItems(requireActivity(), taskItems);
     }
+//    public void deleteTaskItem(int position) {
+//        // 处理删除任务项的逻辑
+//        if (position >= 0 && position < taskItems.size()) {
+//            taskItems.remove(position);
+//            // 刷新适配器或更新视图
+//            taskItemAdapter.notifyItemRemoved(position);
+//            // 保存数据（如果需要）
+//            new DataBank().saveweeklyItems(requireActivity(), taskItems);
+//            Log.d("WeeklyTaskFragment", "任务项 " + position + " 已经删除！");
+//        } else {
+//            Log.d("WeeklyTaskFragment", "无效的任务项位置：" + position);
+//        }
+//    }
+//    public void updateTaskItem(int position, TaskItem updatedTask) {
+//        if (position >= 0 && position < taskItems.size()) {
+//            taskItems.set(position, updatedTask);
+//            taskItemAdapter.notifyItemChanged(position);
+//        }
+//    }
     private static final int MENU_ITEM_ADD = 0;
     private static final int MENU_ITEM_DELETE = 1;
     private static final int MENU_ITEM_UPDATE = 2;
     @Override
     public boolean onContextItemSelected(MenuItem item) {
-        AdapterView.AdapterContextMenuInfo menuInfo = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-        int position = item.getOrder();
+        // 检查是否是当前活动的 Fragment
+        if (!isResumed()) {
+            return false;
+        }
         switch (item.getItemId()) {
             case MENU_ITEM_ADD:
                 Intent intent = new Intent(requireActivity(), TaskItemDetailActivity.class);
@@ -124,21 +148,21 @@ public class WeeklyTaskFragment extends Fragment {
                         .setTitle("删除任务")
                         .setMessage("确定要删除这个任务吗？")
                         .setPositiveButton("删除", (dialog, which) -> {
-                            taskItems.remove(position);
-                            taskItemAdapter.notifyItemRemoved(position);
-                            new DataBank().saveTaskItems(requireActivity(),taskItems,"weekly_tasks.data");
+                            taskItems.remove(item.getOrder());
+                            taskItemAdapter.notifyItemRemoved(item.getOrder());
+                            new DataBank().saveweeklyItems(requireActivity(), taskItems);
                         })
                         .setNegativeButton("取消", null)
                         .show();
                 break;
             case MENU_ITEM_UPDATE:
-                TaskItem taskItemToUpdate = taskItems.get(position);
                 Intent intentUpdate = new Intent(requireActivity(), TaskItemDetailActivity.class);
+                TaskItem taskItemToUpdate = taskItems.get(item.getOrder());
                 intentUpdate.putExtra("name", taskItemToUpdate.getName());
                 intentUpdate.putExtra("points", taskItemToUpdate.getPoint());
-                intentUpdate.putExtra("quantity", taskItemToUpdate.getNumber());
+//                intentUpdate.putExtra("quantity", taskItemToUpdate.getNumber());
                 intentUpdate.putExtra("category", taskItemToUpdate.getcategory());
-                intentUpdate.putExtra("position", position);
+                intentUpdate.putExtra("position", item.getOrder());
                 updateItemLauncher.launch(intentUpdate);
                 break;
             default:
@@ -168,13 +192,13 @@ public class WeeklyTaskFragment extends Fragment {
             @Override
             public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
                 menu.setHeaderTitle("更多操作");
-                menu.add(0, MENU_ITEM_ADD, getAdapterPosition(), "添加");
-                menu.add(0, MENU_ITEM_DELETE, getAdapterPosition(), "删除");
-                menu.add(0, MENU_ITEM_UPDATE, getAdapterPosition(), "修改");
+                menu.add(0, MENU_ITEM_ADD, getAdapterPosition(), "添加"+this.getAdapterPosition());
+                menu.add(0, MENU_ITEM_DELETE, getAdapterPosition(), "删除"+this.getAdapterPosition());
+                menu.add(0, MENU_ITEM_UPDATE, getAdapterPosition(), "修改"+this.getAdapterPosition());
             }
         }
         public TaskItemAdapter(ArrayList<TaskItem> taskItems) {
-            this.taskItemArrayList = taskItems;
+            taskItemArrayList = taskItems;
         }
 
         @NonNull
@@ -182,7 +206,7 @@ public class WeeklyTaskFragment extends Fragment {
         public TaskItemAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             View view = LayoutInflater.from(parent.getContext())
                     .inflate(R.layout.task_item_row, parent, false);
-            return new TaskItemAdapter.ViewHolder(view);
+            return new ViewHolder(view);
         }
 
         @Override

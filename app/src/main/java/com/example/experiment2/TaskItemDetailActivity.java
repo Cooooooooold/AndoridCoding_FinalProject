@@ -25,19 +25,17 @@ public class TaskItemDetailActivity extends AppCompatActivity {
         Intent intent = getIntent();
         if (intent != null) {
             String name = intent.getStringExtra("name");
-
             if (name != null) {
-                double points = intent.getDoubleExtra("points", 0);
+                int points = intent.getIntExtra("points", 0);
                 int quantity = intent.getIntExtra("quantity", 0);
-                int position = intent.getIntExtra("position", -1);
+                position = intent.getIntExtra("position", -1);
 
                 EditText editTextTaskName = findViewById(R.id.title_text_view);
-                EditText editTextPoints = findViewById(R.id.achievement_points);
-                EditText editTextQuantity = findViewById(R.id.number_of_task);
-
                 editTextTaskName.setText(name);
-                editTextPoints.setText(String.valueOf(points));
-                editTextQuantity.setText(String.valueOf(quantity));
+                EditText editTextPoints = findViewById(R.id.achievement_points);
+                editTextPoints.setText(Integer.toString(points));
+                EditText editTextQuantity = findViewById(R.id.number_of_task);
+                editTextQuantity.setText(Integer.toString(quantity));
         }
 
         Button buttonOk = findViewById(R.id.button_task_items);
@@ -48,17 +46,12 @@ public class TaskItemDetailActivity extends AppCompatActivity {
                     EditText editTextTaskName = findViewById(R.id.title_text_view);
                     EditText editTextPoints = findViewById(R.id.achievement_points);
                     EditText editTextQuantity = findViewById(R.id.number_of_task);
-
-                    String names = editTextTaskName.getText().toString();
-                    double points = Double.parseDouble(editTextPoints.getText().toString());
-                    int quantity = Integer.parseInt(editTextQuantity.getText().toString());
-                    resultIntent.putExtra("name", names);
-                    resultIntent.putExtra("points", points);
-                    resultIntent.putExtra("quantity", quantity);
+                    resultIntent.putExtra("name", editTextTaskName.getText().toString());
+                    resultIntent.putExtra("points",editTextPoints.getText().toString());
+                    resultIntent.putExtra("quantity", editTextQuantity.getText().toString());
                     resultIntent.putExtra("position", position);
-
                     setResult(Activity.RESULT_OK, resultIntent);
-                    finish();
+                    TaskItemDetailActivity.this.finish();
             }
         });
     }

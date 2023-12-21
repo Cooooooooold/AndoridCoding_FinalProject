@@ -26,7 +26,7 @@ import com.google.android.material.tabs.TabLayoutMediator;
 
 public class MissionsFragment extends Fragment {
     private String[] tabHeaderStrings = {"每日任务", "每周任务", "普通任务"};
-
+    private Fragment currentActiveFragment;
     // 添加一个变量来存储当前选中的 Tab 索引
     private int currentTabIndex = 0;
     public MissionsFragment() {
@@ -52,7 +52,12 @@ public class MissionsFragment extends Fragment {
                 currentTabIndex = position;  // 更新当前选中的 Tab 索引
             }
         });
+
         return rootview;
+    }
+    public void setCurrentActiveFragment(Fragment fragment) {
+        this.currentActiveFragment = fragment;
+        // 其他逻辑...
     }
     public void handleTaskResult(Intent data) {
         // 在开始处添加日志
@@ -67,15 +72,15 @@ public class MissionsFragment extends Fragment {
         Fragment currentFragment = getChildFragmentManager().getFragments().get(currentTabIndex);
         if (currentFragment instanceof DailyTaskFragment) {
             Log.d("MissionsFragment", "Adding task to DailyTaskFragment");
-            ((DailyTaskFragment) currentFragment).addTaskItem(new TaskItem(name, points, quantity, category));
+            ((DailyTaskFragment) currentFragment).addTaskItem(new TaskItem(name, (int) points, category,false));
         } else if (currentFragment instanceof WeeklyTaskFragment) {
             Log.d("MissionsFragment", "Adding task to WeeklyTaskFragment");
             // 类似地处理 WeeklyTaskFragment
-            ((WeeklyTaskFragment) currentFragment).addTaskItem(new TaskItem(name, points, quantity, category));
+            ((WeeklyTaskFragment) currentFragment).addTaskItem(new TaskItem(name, (int) points, category,false));
         } else if (currentFragment instanceof NormalTaskFragment) {
             Log.d("MissionsFragment", "Adding task to NormalTaskFragment");
             // 类似地处理 NormalTaskFragment
-            ((NormalTaskFragment) currentFragment).addTaskItem(new TaskItem(name, points, quantity, category));
+            ((NormalTaskFragment) currentFragment).addTaskItem(new TaskItem(name, (int) points, category,false));
         }
     }
 
@@ -90,7 +95,6 @@ public class MissionsFragment extends Fragment {
         @Override
         public Fragment createFragment(int position) {
             Fragment fragment;
-            String tag;
             switch (position) {
                 case 0:
                     fragment = new DailyTaskFragment();

@@ -1,11 +1,8 @@
 package com.example.experiment2.TopUI;
 
-import static androidx.core.view.OneShotPreDrawListener.add;
-import static java.nio.file.Files.size;
-
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,7 +11,6 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -26,10 +22,10 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.experiment2.BottomUI.MissionsFragment;
 import com.example.experiment2.R;
 import com.example.experiment2.TaskItemDetailActivity;
 import com.example.experiment2.data.DataBank;
-import com.example.experiment2.data.ShopItem;
 import com.example.experiment2.data.TaskItem;
 
 import java.util.ArrayList;
@@ -39,9 +35,8 @@ public class DailyTaskFragment extends Fragment {
     private ArrayList<TaskItem> taskItems = new ArrayList<>();
     private TaskItemAdapter taskItemAdapter;
 
-    ActivityResultLauncher<Intent> addItemLauncher;
-    ActivityResultLauncher<Intent> updateItemLauncher;
 
+    private String fragmentType = "DailyTaskFragment";
 
 
     @Override
@@ -61,9 +56,9 @@ public class DailyTaskFragment extends Fragment {
 
         //定义一个Arraylist
         taskItems= new ArrayList<>();
-        taskItems = new DataBank().loadTaskItems(getContext(), "daily_tasks.data");
+        taskItems = new DataBank().loaddailyItems(getContext());
         if(0 == taskItems.size()){
-            taskItems.add(new TaskItem("读书",500,5,"学习"));
+            taskItems.add(new TaskItem("读书",500,"学习",false));
         }
         taskItemAdapter = new TaskItemAdapter(taskItems);
         recyclerView.setAdapter(taskItemAdapter);
@@ -73,24 +68,22 @@ public class DailyTaskFragment extends Fragment {
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (result.getResultCode() == Activity.RESULT_OK) {
-                        Intent data = result.getData();
-                        if (data != null) {
-                            // 检查返回的任务类型是否为 "每日任务"
-                            String fragmentType = data.getStringExtra("fragmentType");
-                            if ("每日任务".equals(fragmentType)) {
+                                Intent data = result.getData();
                                 // 处理任务数据
                                 String name = data.getStringExtra("name");
-                                double points = data.getDoubleExtra("points", 0);
-                                int quantity = data.getIntExtra("quantity", 0);
+                                String points = data.getStringExtra("points");
+//                                String quantity = data.getStringExtra("quantity");
                                 String category = data.getStringExtra("category");
-
-                                taskItems.add(new TaskItem(name, points, quantity, category));
+                                int point=Integer.parseInt(points);
+                                // 添加到任务列表并更新界面
+                                taskItems.add(new TaskItem(name, point,category,false));
                                 taskItemAdapter.notifyItemInserted(taskItems.size());
-                                new DataBank().saveTaskItems(requireActivity(), taskItems,"daily_tasks.data");
+
+                                new DataBank().savedailyItems(requireActivity(), taskItems);
                                 Log.d("DailyTaskFragment", "Received fragment type: " + fragmentType);
-                            }
                         }
-                    }
+                        else if (result.getResultCode() == Activity.RESULT_CANCELED) {
+                        }
                 }
         );
 
@@ -100,10 +93,9 @@ public class DailyTaskFragment extends Fragment {
                 result -> {
                     if (result.getResultCode() == Activity.RESULT_OK) {
                         Intent data = result.getData();
-
                         int position = data.getIntExtra("position", 0);
                         String name = data.getStringExtra("name");
-                        double point = data.getDoubleExtra("point", 0); // 修改这里
+                        double point = data.getDoubleExtra("point", 0);
                         int number = data.getIntExtra("number", 0);
                         String category = data.getStringExtra("category");
 
@@ -111,17 +103,45 @@ public class DailyTaskFragment extends Fragment {
                         taskItem.setName(name);
                         taskItem.setPoint(point);
                         taskItemAdapter.notifyItemChanged(position);
+                        new DataBank().savedailyItems(requireActivity(), taskItems);
                     }
                 }
         );
         return view;
     }
+    @Override
+    public void onResume() {
+        super.onResume();
+        ((MissionsFragment) getParentFragment()).setCurrentActiveFragment(this);
+    }
+    ActivityResultLauncher<Intent> addItemLauncher;
+    ActivityResultLauncher<Intent> updateItemLauncher;
     public void addTaskItem(TaskItem taskItem) {
         Log.d("DailyTaskFragment", "addTaskItem: Adding task: " + taskItem.getName());
         taskItems.add(taskItem);
         taskItemAdapter.notifyItemInserted(taskItems.size() - 1);
-        new DataBank().saveTaskItems(requireActivity(), taskItems, "daily_tasks.data");
+        new DataBank().savedailyItems(requireActivity(), taskItems);
     }
+
+//    public void deleteTaskItem(int position) {
+//        // 处理删除任务项的逻辑
+//        if (position >= 0 && position < taskItems.size()) {
+//            taskItems.remove(position);
+//            // 刷新适配器或更新视图
+//            taskItemAdapter.notifyItemRemoved(position);
+//            // 保存数据（如果需要）
+//            new DataBank().savedailyItems(requireActivity(), taskItems);
+//            Log.d("DailyTaskFragment", "任务项 " + position + " 已经删除！");
+//        } else {
+//            Log.d("DailyTaskFragment", "无效的任务项位置：" + position);
+//        }
+//    }
+//    public void updateTaskItem(int position, TaskItem updatedTask) {
+//        if (position >= 0 && position < taskItems.size()) {
+//            taskItems.set(position, updatedTask);
+//            taskItemAdapter.notifyItemChanged(position);
+//        }
+//    }
     private static final int MENU_ITEM_ADD = 0;
     private static final int MENU_ITEM_DELETE = 1;
     private static final int MENU_ITEM_UPDATE = 2;
@@ -129,8 +149,10 @@ public class DailyTaskFragment extends Fragment {
 
     @Override
     public boolean onContextItemSelected(MenuItem item) {
-        AdapterView.AdapterContextMenuInfo menuInfo = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-        int position = item.getOrder();
+        // 检查是否是当前活动的 Fragment
+        if (!isResumed()) {
+            return false;
+        }
         switch (item.getItemId()) {
             case MENU_ITEM_ADD:
                 Intent intent = new Intent(requireActivity(), TaskItemDetailActivity.class);
@@ -141,25 +163,25 @@ public class DailyTaskFragment extends Fragment {
                         .setTitle("删除任务")
                         .setMessage("确定要删除这个任务吗？")
                         .setPositiveButton("删除", (dialog, which) -> {
-                            taskItems.remove(position);
-                            taskItemAdapter.notifyItemRemoved(position);
-                            new DataBank().saveTaskItems(requireActivity(),taskItems,"daily_tasks.data");
+                            taskItems.remove(item.getOrder());
+                            taskItemAdapter.notifyItemRemoved(item.getOrder());
+                            new DataBank().savedailyItems(requireActivity(), taskItems);
                         })
                         .setNegativeButton("取消", null)
                         .show();
                 break;
             case MENU_ITEM_UPDATE:
-                TaskItem taskItemToUpdate = taskItems.get(position);
                 Intent intentUpdate = new Intent(requireActivity(), TaskItemDetailActivity.class);
+                TaskItem taskItemToUpdate = taskItems.get(item.getOrder());
                 intentUpdate.putExtra("name", taskItemToUpdate.getName());
                 intentUpdate.putExtra("points", taskItemToUpdate.getPoint());
-                intentUpdate.putExtra("quantity", taskItemToUpdate.getNumber());
+//                intentUpdate.putExtra("quantity", taskItemToUpdate.getNumber());
                 intentUpdate.putExtra("category", taskItemToUpdate.getcategory());
-                intentUpdate.putExtra("position", position);
+                intentUpdate.putExtra("position", item.getOrder());
                 updateItemLauncher.launch(intentUpdate);
                 break;
-            default:
-                return super.onContextItemSelected(item);
+//            default:
+//                return super.onContextItemSelected(item);
         }
         return true;
     }
@@ -168,14 +190,14 @@ public class DailyTaskFragment extends Fragment {
         private final ArrayList<TaskItem> taskItemArrayList;
         private class ViewHolder extends RecyclerView.ViewHolder implements View.OnCreateContextMenuListener {
             private final TextView textViewName;
-            private final TextView textViewPrice;
+            private final TextView textViewPoint;
             private final ImageView imageViewItem;
             private final CheckBox checkboxView;
 
             public ViewHolder(View itemView) {
                 super(itemView);
                 textViewName = itemView.findViewById(R.id.task_item_name);
-                textViewPrice = itemView.findViewById(R.id.task_item_reward);
+                textViewPoint = itemView.findViewById(R.id.task_item_reward);
                 imageViewItem = itemView.findViewById(R.id.imageView_item);
                 checkboxView = itemView.findViewById(R.id.checkBox);
 
@@ -185,10 +207,18 @@ public class DailyTaskFragment extends Fragment {
             @Override
             public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
                 menu.setHeaderTitle("更多操作");
-                menu.add(0, MENU_ITEM_ADD, getAdapterPosition(), "添加");
-                menu.add(0, MENU_ITEM_DELETE, getAdapterPosition(), "删除");
-                menu.add(0, MENU_ITEM_UPDATE, getAdapterPosition(), "修改");
+                menu.add(0, MENU_ITEM_ADD, getAdapterPosition(), "添加"+this.getAdapterPosition());
+                menu.add(0, MENU_ITEM_DELETE, getAdapterPosition(), "删除"+this.getAdapterPosition());
+                menu.add(0, MENU_ITEM_UPDATE, getAdapterPosition(), "修改"+this.getAdapterPosition());
             }
+            public TextView getTaskName() {
+                return textViewName;
+            }
+
+            public TextView getTaskPoint() {
+                return textViewPoint;
+            }
+            public CheckBox getCheckBox(){return checkboxView;}
         }
         public TaskItemAdapter(ArrayList<TaskItem> taskItems) { taskItemArrayList = taskItems;}
 
@@ -201,10 +231,11 @@ public class DailyTaskFragment extends Fragment {
         }
 
         @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        public void onBindViewHolder(@NonNull ViewHolder holder, @SuppressLint("RecyclerView") int position) {
             TaskItem taskItem = taskItemArrayList.get(position);
             holder.textViewName.setText(taskItem.getName());
-            holder.textViewPrice.setText(String.valueOf(taskItem.getPoint()));
+            holder.textViewPoint.setText(String.valueOf(taskItem.getPoint()));
+//            holder.itemView.setTag(position); // 存储当前位置作为tag
             // Set image resource if needed
         }
 
