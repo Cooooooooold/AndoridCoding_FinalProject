@@ -26,27 +26,23 @@ import com.example.experiment2.BottomUI.MissionsFragment;
 import com.example.experiment2.R;
 import com.example.experiment2.TaskItemDetailActivity;
 import com.example.experiment2.data.DataBank;
+import com.example.experiment2.data.PointChange;
 import com.example.experiment2.data.TaskItem;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 
 public class DailyTaskFragment extends Fragment {
 
     private ArrayList<TaskItem> taskItems = new ArrayList<>();
     private TaskItemAdapter taskItemAdapter;
-
-
     private String fragmentType = "DailyTaskFragment";
 
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        if (getArguments() != null) {
-
-        }
-    }
+    public void onCreate(Bundle savedInstanceState) {super.onCreate(savedInstanceState);}
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -58,7 +54,10 @@ public class DailyTaskFragment extends Fragment {
         taskItems= new ArrayList<>();
         taskItems = new DataBank().loaddailyItems(getContext());
         if(0 == taskItems.size()){
-            taskItems.add(new TaskItem("读书",500,"学习",false));
+            taskItems.add(new TaskItem("读一篇英文文章",500,false));
+            taskItems.add(new TaskItem("读一本课外读物",600,false));
+            taskItems.add(new TaskItem("写5题数学题",700,false));
+            taskItems.add(new TaskItem("背单词30个",1000,false));
         }
         taskItemAdapter = new TaskItemAdapter(taskItems);
         recyclerView.setAdapter(taskItemAdapter);
@@ -72,13 +71,10 @@ public class DailyTaskFragment extends Fragment {
                                 // 处理任务数据
                                 String name = data.getStringExtra("name");
                                 String points = data.getStringExtra("points");
-//                                String quantity = data.getStringExtra("quantity");
-                                String category = data.getStringExtra("category");
                                 int point=Integer.parseInt(points);
                                 // 添加到任务列表并更新界面
-                                taskItems.add(new TaskItem(name, point,category,false));
+                                taskItems.add(new TaskItem(name, point,false));
                                 taskItemAdapter.notifyItemInserted(taskItems.size());
-
                                 new DataBank().savedailyItems(requireActivity(), taskItems);
                                 Log.d("DailyTaskFragment", "Received fragment type: " + fragmentType);
                         }
@@ -96,8 +92,6 @@ public class DailyTaskFragment extends Fragment {
                         int position = data.getIntExtra("position", 0);
                         String name = data.getStringExtra("name");
                         double point = data.getDoubleExtra("point", 0);
-                        int number = data.getIntExtra("number", 0);
-                        String category = data.getStringExtra("category");
 
                         TaskItem taskItem = taskItems.get(position);
                         taskItem.setName(name);
@@ -107,6 +101,7 @@ public class DailyTaskFragment extends Fragment {
                     }
                 }
         );
+
         return view;
     }
     @Override
@@ -123,28 +118,10 @@ public class DailyTaskFragment extends Fragment {
         new DataBank().savedailyItems(requireActivity(), taskItems);
     }
 
-//    public void deleteTaskItem(int position) {
-//        // 处理删除任务项的逻辑
-//        if (position >= 0 && position < taskItems.size()) {
-//            taskItems.remove(position);
-//            // 刷新适配器或更新视图
-//            taskItemAdapter.notifyItemRemoved(position);
-//            // 保存数据（如果需要）
-//            new DataBank().savedailyItems(requireActivity(), taskItems);
-//            Log.d("DailyTaskFragment", "任务项 " + position + " 已经删除！");
-//        } else {
-//            Log.d("DailyTaskFragment", "无效的任务项位置：" + position);
-//        }
-//    }
-//    public void updateTaskItem(int position, TaskItem updatedTask) {
-//        if (position >= 0 && position < taskItems.size()) {
-//            taskItems.set(position, updatedTask);
-//            taskItemAdapter.notifyItemChanged(position);
-//        }
-//    }
     private static final int MENU_ITEM_ADD = 0;
     private static final int MENU_ITEM_DELETE = 1;
     private static final int MENU_ITEM_UPDATE = 2;
+    private static final int MENU_ITEM_SORT = 3;
 
 
     @Override
@@ -175,33 +152,88 @@ public class DailyTaskFragment extends Fragment {
                 TaskItem taskItemToUpdate = taskItems.get(item.getOrder());
                 intentUpdate.putExtra("name", taskItemToUpdate.getName());
                 intentUpdate.putExtra("points", taskItemToUpdate.getPoint());
-//                intentUpdate.putExtra("quantity", taskItemToUpdate.getNumber());
-                intentUpdate.putExtra("category", taskItemToUpdate.getcategory());
                 intentUpdate.putExtra("position", item.getOrder());
                 updateItemLauncher.launch(intentUpdate);
+                break;
+            case MENU_ITEM_SORT:
+                sortTasks(); // 排序任务
                 break;
 //            default:
 //                return super.onContextItemSelected(item);
         }
         return true;
     }
+    private void sortTasks() {
+        Collections.sort(taskItems, new Comparator<TaskItem>() {
+            @Override
+            public int compare(TaskItem o1, TaskItem o2) {
+                return Integer.compare((int) o2.getPoint(), (int) o1.getPoint()); // 降序排序
+            }
+        });
+        taskItemAdapter.notifyDataSetChanged();
+    }
+    // 添加一个方法来处理任务项的删除和积分更新
+    private void deleteTaskAndUpdatePoints(int position) {
+        if (position >= 0 && position < taskItems.size()) {
+            TaskItem removedItem = taskItems.remove(position);
+            taskItemAdapter.notifyItemRemoved(position);
+
+//            // 调用方法来更新总积分
+            updateTotalPoints((int) removedItem.getPoint());
+        }
+    }
+
+    // 添加用于更新总积分的方法
+    private void updateTotalPoints(int points) {
+        // 实现更新积分的逻辑
+        DataBank dataBank = new DataBank();
+        int totalPoints = dataBank.getTotalPoints(requireActivity());
+        totalPoints += points;
+        dataBank.setTotalPoints(requireActivity(), totalPoints);
+
+        // 更新显示总积分的 TextView
+        TextView totalPointsTextView = getActivity().findViewById(R.id.total_point);
+        totalPointsTextView.setText(String.valueOf(totalPoints));
+    }
+
+//    private void updateChart() {
+//        if (getView() != null) {
+//            setupLineChart(getView());
+//        }
+//    }
 
     private class TaskItemAdapter extends RecyclerView.Adapter<TaskItemAdapter.ViewHolder> {
         private final ArrayList<TaskItem> taskItemArrayList;
+
         private class ViewHolder extends RecyclerView.ViewHolder implements View.OnCreateContextMenuListener {
             private final TextView textViewName;
             private final TextView textViewPoint;
-            private final ImageView imageViewItem;
             private final CheckBox checkboxView;
 
             public ViewHolder(View itemView) {
                 super(itemView);
                 textViewName = itemView.findViewById(R.id.task_item_name);
                 textViewPoint = itemView.findViewById(R.id.task_item_reward);
-                imageViewItem = itemView.findViewById(R.id.imageView_item);
                 checkboxView = itemView.findViewById(R.id.checkBox);
 
                 itemView.setOnCreateContextMenuListener(this);
+                checkboxView.setOnClickListener(v -> {
+                    int position = getAdapterPosition();
+                    if (position != RecyclerView.NO_POSITION) {
+                        TaskItem taskItem = taskItemArrayList.get(position);
+                        if (checkboxView.isChecked()) {
+                            // 当 CheckBox 被勾选时，记录当前时间
+                            taskItem.setCompletionTime(System.currentTimeMillis());
+                            new DataBank().savedailyItems(requireActivity(), taskItemArrayList);
+
+                        } else {
+                            // 当 CheckBox 被取消勾选时，可以选择重置完成时间
+                            taskItem.setCompletionTime(0);
+                        }
+                        // 使用 Fragment 引用调用删除方法
+                        deleteTaskAndUpdatePoints(position);
+                    }
+                });
             }
 
             @Override
@@ -210,6 +242,7 @@ public class DailyTaskFragment extends Fragment {
                 menu.add(0, MENU_ITEM_ADD, getAdapterPosition(), "添加"+this.getAdapterPosition());
                 menu.add(0, MENU_ITEM_DELETE, getAdapterPosition(), "删除"+this.getAdapterPosition());
                 menu.add(0, MENU_ITEM_UPDATE, getAdapterPosition(), "修改"+this.getAdapterPosition());
+                menu.add(0, MENU_ITEM_SORT, getAdapterPosition(), "排序"+this.getAdapterPosition());
             }
             public TextView getTaskName() {
                 return textViewName;
@@ -220,7 +253,9 @@ public class DailyTaskFragment extends Fragment {
             }
             public CheckBox getCheckBox(){return checkboxView;}
         }
-        public TaskItemAdapter(ArrayList<TaskItem> taskItems) { taskItemArrayList = taskItems;}
+        public TaskItemAdapter(ArrayList<TaskItem> taskItems) {
+            taskItemArrayList = taskItems;
+        }
 
         @NonNull
         @Override
@@ -235,8 +270,6 @@ public class DailyTaskFragment extends Fragment {
             TaskItem taskItem = taskItemArrayList.get(position);
             holder.textViewName.setText(taskItem.getName());
             holder.textViewPoint.setText(String.valueOf(taskItem.getPoint()));
-//            holder.itemView.setTag(position); // 存储当前位置作为tag
-            // Set image resource if needed
         }
 
         @Override

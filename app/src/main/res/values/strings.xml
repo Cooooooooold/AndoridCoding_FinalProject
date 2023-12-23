@@ -25,5 +25,9 @@
     <string name="Task_item_name">task name</string>
     <string name="task_item_reward">task reward</string>
     <string name="Task_number">5</string>
-
+    <string name="totalpoint">总任务积分：</string>
+    <string name="Total_Point_Value">0</string>
+    <string name="statistics">统计</string>
+    <string name="title_activity_live_update">LiveUpdateActivity</string>
+    <string name="relax">调整心态，释放压力，方能继续前进！</string>
 </resources>

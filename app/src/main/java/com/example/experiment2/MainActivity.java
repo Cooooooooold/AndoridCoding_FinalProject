@@ -3,32 +3,31 @@ package com.example.experiment2;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
 import android.widget.PopupMenu;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.example.experiment2.BottomUI.MesFragment;
 import com.example.experiment2.BottomUI.MissionsFragment;
 import com.example.experiment2.BottomUI.RewardsFragment;
-import com.example.experiment2.TopUI.DailyTaskFragment;
-import com.example.experiment2.TopUI.NormalTaskFragment;
-import com.example.experiment2.TopUI.WeeklyTaskFragment;
-import com.example.experiment2.data.TaskItem;
+import com.example.experiment2.BottomUI.StatisticsFragment;
+import com.example.experiment2.TopUI.DailyStatisticsFragment;
+import com.example.experiment2.data.DataBank;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class MainActivity extends AppCompatActivity{
     private BottomNavigationView bottomNav;
     private MissionsFragment missionsFragment;
     private RewardsFragment rewardsFragment;
+    private StatisticsFragment statisticsFragment;
     private MesFragment mesFragment;
     private Fragment activeFragment;
 
@@ -45,6 +44,7 @@ public class MainActivity extends AppCompatActivity{
             // 第一次创建 Activity 时添加 Fragment
             missionsFragment = new MissionsFragment();
             rewardsFragment = new RewardsFragment();
+            statisticsFragment = new StatisticsFragment();
             mesFragment = new MesFragment();
 
             getSupportFragmentManager().beginTransaction()
@@ -52,6 +52,8 @@ public class MainActivity extends AppCompatActivity{
                     .hide(missionsFragment)
                     .add(R.id.nav_container, rewardsFragment, "Rewards")
                     .hide(rewardsFragment)
+                    .add(R.id.nav_container, statisticsFragment, "Statistics")
+                    .hide(statisticsFragment)
                     .add(R.id.nav_container, mesFragment, "Mes")
                     .hide(mesFragment)
                     .commit();
@@ -61,6 +63,7 @@ public class MainActivity extends AppCompatActivity{
             missionsFragment = (MissionsFragment) getSupportFragmentManager().findFragmentByTag("Missions");
             rewardsFragment = (RewardsFragment) getSupportFragmentManager().findFragmentByTag("Rewards");
             mesFragment = (MesFragment) getSupportFragmentManager().findFragmentByTag("Mes");
+            statisticsFragment = (StatisticsFragment) getSupportFragmentManager().findFragmentByTag("Statistics");
             activeFragment = getSupportFragmentManager().getFragment(savedInstanceState, "activeFragment");
         }
         // 显示当前 Fragment
@@ -75,6 +78,9 @@ public class MainActivity extends AppCompatActivity{
             } else if (id == R.id.nav_item_rewards) {
                 switchFragment(rewardsFragment);
                 return true;
+            } else if (id == R.id.nav_item_statistics) {
+                switchFragment(statisticsFragment);
+                return true;
             } else if (id == R.id.nav_item_mes) {
                 switchFragment(mesFragment);
                 return true;
@@ -85,6 +91,11 @@ public class MainActivity extends AppCompatActivity{
         // 找到按钮并设置点击监听器
         Button addButton = findViewById(R.id.button_addmissions);
         addButton.setOnClickListener(view -> showMenu(view));
+        // 获取并显示总积分
+        DataBank dataBank = new DataBank();
+        int totalPoints = dataBank.getTotalPoints(this);
+        TextView totalPointsTextView = findViewById(R.id.total_point);
+        totalPointsTextView.setText(String.valueOf(totalPoints));
     }
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
@@ -92,7 +103,12 @@ public class MainActivity extends AppCompatActivity{
         // 保存当前显示的 Fragment
         getSupportFragmentManager().putFragment(outState, "activeFragment", activeFragment);
     }
-
+//    public void updateChart() {
+//        DailyStatisticsFragment fragment = (DailyStatisticsFragment) getSupportFragmentManager().findFragmentByTag("DailyStatisticsFragment");
+//        if (fragment != null) {
+//            fragment.setupLineChart(fragment.getView());
+//        }
+//    }
     private void switchFragment(Fragment fragment) {
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         if (activeFragment != null) {
@@ -107,20 +123,24 @@ public class MainActivity extends AppCompatActivity{
         PopupMenu popupMenu = new PopupMenu(this, view);
         // 添加菜单项
         popupMenu.getMenu().add(Menu.NONE, 1, 1, "新建任务");
-        popupMenu.getMenu().add(Menu.NONE, 2, 2, "排序");
-
+        popupMenu.getMenu().add(Menu.NONE, 2, 2, "新建奖励");
+//        popupMenu.getMenu().add(Menu.NONE, 3, 3, "排序");
         // 设置菜单项点击监听器
         popupMenu.setOnMenuItemClickListener(item -> {
             switch (item.getItemId()) {
                 case 1:
                     // 处理新建任务的点击事件
                     Intent intent = new Intent(MainActivity.this, TaskItemDetailActivity.class);
-                    startActivityForResult(intent, REQUEST_CODE_ADD_TASK);
+                    startActivityForResult(intent, REQUEST_CODE_ADD_TASK_MISSIONS);
                     return true;
                 case 2:
-                    // 处理排序的点击事件
-                    sortTasks();
+                    Intent rewardsIntent = new Intent(MainActivity.this, TaskItemDetailActivity.class);
+                    // 这里是为 rewardsFragment 添加任务
+                    startActivityForResult(rewardsIntent, REQUEST_CODE_ADD_TASK_REWARDS);
                     return true;
+//                case 3:
+//                    sortTasks();
+//                    return true;
                 default:
                     return false;
             }
@@ -130,21 +150,24 @@ public class MainActivity extends AppCompatActivity{
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_CODE_ADD_TASK && resultCode == Activity.RESULT_OK && data != null) {
-            // 调用 handleTaskResult 方法处理返回的数据
-            if (missionsFragment != null) {
-                missionsFragment.handleTaskResult(data);
+        if (resultCode == Activity.RESULT_OK && data != null) {
+            if (requestCode == REQUEST_CODE_ADD_TASK_MISSIONS) {
+                // missionsFragment 处理结果
+                if (missionsFragment != null) {
+                    missionsFragment.handleTaskResult(data);
+                }
+            } else if (requestCode == REQUEST_CODE_ADD_TASK_REWARDS) {
+                // rewardsFragment 处理结果
+                if (rewardsFragment != null) {
+                    rewardsFragment.handleRewardTaskResult(data);
+                }
             }
         }
     }
 
-    // 排序任务的方法
-    private void sortTasks() {
-        // 实现排序任务的逻辑
-    }
-
     // 这里的 REQUEST_CODE_ADD_TASK 是您启动 TaskItemDetailActivity 时使用的请求码
-    private static final int REQUEST_CODE_ADD_TASK = 1;
+    private static final int REQUEST_CODE_ADD_TASK_MISSIONS = 1;
+    private static final int REQUEST_CODE_ADD_TASK_REWARDS = 2;
 
 }
 //        ViewPager2 viewPager = findViewById(R.id.view_pager);

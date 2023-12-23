@@ -31,6 +31,9 @@ import com.example.experiment2.data.DataBank;
 import com.example.experiment2.data.TaskItem;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+
 public class WeeklyTaskFragment extends Fragment {
     private ArrayList<TaskItem> taskItems = new ArrayList<>();
     private TaskItemAdapter taskItemAdapter;
@@ -50,7 +53,10 @@ public class WeeklyTaskFragment extends Fragment {
         taskItems = new ArrayList<>();
         taskItems = new DataBank().loadweeklyItems(getContext());
         if (0 == taskItems.size()) {
-            taskItems.add(new TaskItem("背单词", 500,  "学习",false));
+            taskItems.add(new TaskItem("累计读3篇英文文章",1000,false));
+            taskItems.add(new TaskItem("累计读3本课外读物",1500,false));
+            taskItems.add(new TaskItem("累计写35题数学题",1500,false));
+            taskItems.add(new TaskItem("累计背单词210个",2000,false));
         }
         taskItemAdapter = new TaskItemAdapter(taskItems);
         recyclerView.setAdapter(taskItemAdapter);
@@ -61,19 +67,16 @@ public class WeeklyTaskFragment extends Fragment {
                 result -> {
                     if (result.getResultCode() == Activity.RESULT_OK) {
                         Intent data = result.getData();
-                            // 检查返回的任务类型是否为 "每周任务"
-//                            if ("每周任务".equals(fragmentType)) {
                                 // 处理任务数据
                                 String name = data.getStringExtra("name");
-                                 String points = data.getStringExtra("points");
-//                                int quantity = data.getIntExtra("quantity", 0);
-                                String category = data.getStringExtra("category");
-                                 int point=Integer.parseInt(points);
-                                taskItems.add(new TaskItem(name, point,category,false));
+                                String points = data.getStringExtra("points");
+                                int point=Integer.parseInt(points);
+                                taskItems.add(new TaskItem(name, point,false));
                                 taskItemAdapter.notifyItemInserted(taskItems.size());
                                 new DataBank().saveweeklyItems(requireActivity(), taskItems);
                                 Log.d("WeeklyTaskFragment", "Received fragment type: " + fragmentType);
-//                            }
+                    }
+                    else if (result.getResultCode() == Activity.RESULT_CANCELED) {
                     }
                 }
         );
@@ -87,13 +90,12 @@ public class WeeklyTaskFragment extends Fragment {
                         int position = data.getIntExtra("position", 0);
                         String name = data.getStringExtra("name");
                         double point = data.getDoubleExtra("point", 0);
-                        int number = data.getIntExtra("number", 0);
-                        String category = data.getStringExtra("category");
 
                         TaskItem taskItem = taskItems.get(position);
                         taskItem.setName(name);
                         taskItem.setPoint(point);
                         taskItemAdapter.notifyItemChanged(position);
+                        new DataBank().saveweeklyItems(requireActivity(), taskItems);
                     }
                 }
         );
@@ -110,28 +112,11 @@ public class WeeklyTaskFragment extends Fragment {
         taskItemAdapter.notifyItemInserted(taskItems.size() - 1);
         new DataBank().saveweeklyItems(requireActivity(), taskItems);
     }
-//    public void deleteTaskItem(int position) {
-//        // 处理删除任务项的逻辑
-//        if (position >= 0 && position < taskItems.size()) {
-//            taskItems.remove(position);
-//            // 刷新适配器或更新视图
-//            taskItemAdapter.notifyItemRemoved(position);
-//            // 保存数据（如果需要）
-//            new DataBank().saveweeklyItems(requireActivity(), taskItems);
-//            Log.d("WeeklyTaskFragment", "任务项 " + position + " 已经删除！");
-//        } else {
-//            Log.d("WeeklyTaskFragment", "无效的任务项位置：" + position);
-//        }
-//    }
-//    public void updateTaskItem(int position, TaskItem updatedTask) {
-//        if (position >= 0 && position < taskItems.size()) {
-//            taskItems.set(position, updatedTask);
-//            taskItemAdapter.notifyItemChanged(position);
-//        }
-//    }
+
     private static final int MENU_ITEM_ADD = 0;
     private static final int MENU_ITEM_DELETE = 1;
     private static final int MENU_ITEM_UPDATE = 2;
+    private static final int MENU_ITEM_SORT = 3;
     @Override
     public boolean onContextItemSelected(MenuItem item) {
         // 检查是否是当前活动的 Fragment
@@ -160,33 +145,83 @@ public class WeeklyTaskFragment extends Fragment {
                 TaskItem taskItemToUpdate = taskItems.get(item.getOrder());
                 intentUpdate.putExtra("name", taskItemToUpdate.getName());
                 intentUpdate.putExtra("points", taskItemToUpdate.getPoint());
-//                intentUpdate.putExtra("quantity", taskItemToUpdate.getNumber());
-                intentUpdate.putExtra("category", taskItemToUpdate.getcategory());
                 intentUpdate.putExtra("position", item.getOrder());
                 updateItemLauncher.launch(intentUpdate);
                 break;
-            default:
-                return super.onContextItemSelected(item);
+            case MENU_ITEM_SORT:
+                sortTasks(); // 排序任务
+                break;
+//            default:
+//                return super.onContextItemSelected(item);
         }
         return true;
     }
+    private void sortTasks() {
+        Collections.sort(taskItems, new Comparator<TaskItem>() {
+            @Override
+            public int compare(TaskItem o1, TaskItem o2) {
+                return Integer.compare((int) o2.getPoint(), (int) o1.getPoint()); // 降序排序
+            }
+        });
+        taskItemAdapter.notifyDataSetChanged();
+    }
+    // 添加一个方法来处理任务项的删除和积分更新
+    private void deleteTaskAndUpdatePoints(int position) {
+        if (position >= 0 && position < taskItems.size()) {
+            TaskItem removedItem = taskItems.remove(position);
+            taskItemAdapter.notifyItemRemoved(position);
+//            new DataBank().saveweeklyItems(requireActivity(), taskItems);
 
+//            // 调用方法来更新总积分
+            updateTotalPoints((int) removedItem.getPoint());
+        }
+    }
+
+    // 添加用于更新总积分的方法
+    private void updateTotalPoints(int points) {
+        // 实现更新积分的逻辑
+        DataBank dataBank = new DataBank();
+        int totalPoints = dataBank.getTotalPoints(requireActivity());
+        totalPoints += points;
+        dataBank.setTotalPoints(requireActivity(), totalPoints);
+
+        // 更新显示总积分的 TextView
+        TextView totalPointsTextView = getActivity().findViewById(R.id.total_point);
+        totalPointsTextView.setText(String.valueOf(totalPoints));
+    }
     private class TaskItemAdapter extends RecyclerView.Adapter<TaskItemAdapter.ViewHolder> {
         private final ArrayList<TaskItem> taskItemArrayList;
         private class ViewHolder extends RecyclerView.ViewHolder implements View.OnCreateContextMenuListener {
             private final TextView textViewName;
             private final TextView textViewPrice;
-            private final ImageView imageViewItem;
+
             private final CheckBox checkboxView;
 
             public ViewHolder(View itemView) {
                 super(itemView);
                 textViewName = itemView.findViewById(R.id.task_item_name);
                 textViewPrice = itemView.findViewById(R.id.task_item_reward);
-                imageViewItem = itemView.findViewById(R.id.imageView_item);
                 checkboxView = itemView.findViewById(R.id.checkBox);
 
                 itemView.setOnCreateContextMenuListener(this);
+                itemView.setOnCreateContextMenuListener(this);
+                checkboxView.setOnClickListener(v -> {
+                    int position = getAdapterPosition();
+                    if (position != RecyclerView.NO_POSITION) {
+                        TaskItem taskItem = taskItemArrayList.get(position);
+                        if (checkboxView.isChecked()) {
+                            // 当 CheckBox 被勾选时，记录当前时间
+                            taskItem.setCompletionTime(System.currentTimeMillis());
+                            new DataBank().saveweeklyItems(requireActivity(), taskItemArrayList);
+
+                        } else {
+                            // 当 CheckBox 被取消勾选时，可以选择重置完成时间
+                            taskItem.setCompletionTime(0);
+                        }
+                        // 使用 Fragment 引用调用删除方法
+                        deleteTaskAndUpdatePoints(position);
+                    }
+                });
             }
 
             @Override
@@ -195,6 +230,7 @@ public class WeeklyTaskFragment extends Fragment {
                 menu.add(0, MENU_ITEM_ADD, getAdapterPosition(), "添加"+this.getAdapterPosition());
                 menu.add(0, MENU_ITEM_DELETE, getAdapterPosition(), "删除"+this.getAdapterPosition());
                 menu.add(0, MENU_ITEM_UPDATE, getAdapterPosition(), "修改"+this.getAdapterPosition());
+                menu.add(0, MENU_ITEM_SORT, getAdapterPosition(), "排序"+this.getAdapterPosition());
             }
         }
         public TaskItemAdapter(ArrayList<TaskItem> taskItems) {
@@ -214,7 +250,6 @@ public class WeeklyTaskFragment extends Fragment {
             TaskItem taskItem = taskItemArrayList.get(position);
             holder.textViewName.setText(taskItem.getName());
             holder.textViewPrice.setText(String.valueOf(taskItem.getPoint()));
-            // Set image resource if needed
         }
 
         @Override

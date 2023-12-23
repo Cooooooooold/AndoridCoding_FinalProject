@@ -1,6 +1,5 @@
 package com.example.experiment2.BottomUI;
 
-import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -10,36 +9,39 @@ import androidx.lifecycle.Lifecycle;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 import androidx.viewpager2.widget.ViewPager2;
 
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.example.experiment2.MainActivity;
 import com.example.experiment2.R;
-import com.example.experiment2.TopUI.DailyTaskFragment;
-import com.example.experiment2.TopUI.NormalTaskFragment;
-import com.example.experiment2.TopUI.WeeklyTaskFragment;
-import com.example.experiment2.data.TaskItem;
+import com.example.experiment2.TopUI.AnnuallyStatisticsFragment;
+import com.example.experiment2.TopUI.DailyStatisticsFragment;
+import com.example.experiment2.TopUI.MonthlyStatisticsFragment;
+import com.example.experiment2.TopUI.WeeklyStatisticsFragment;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
-public class MissionsFragment extends Fragment {
-    private String[] tabHeaderStrings = {"每日任务", "每周任务", "普通任务"};
+public class StatisticsFragment extends Fragment {
+    private String[] tabHeaderStrings = {"日","周","月","年"};
     private Fragment currentActiveFragment;
-    // 添加一个变量来存储当前选中的 Tab 索引
     private int currentTabIndex = 0;
-    public MissionsFragment() {
+    public StatisticsFragment() {
         // Required empty public constructor
+    }
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (getArguments() != null) {
+        }
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View rootview = inflater.inflate(R.layout.fragment_missions, container, false);
-
-        ViewPager2 viewPager = rootview.findViewById(R.id.view_pager_final);
-        TabLayout tabLayout = rootview.findViewById(R.id.tab_layout_final);
-
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate the layout for this fragment
+        View rootview = inflater.inflate(R.layout.fragment_statistics, container, false);
+        ViewPager2 viewPager = rootview.findViewById(R.id.statistics_view_pager_final);
+        TabLayout tabLayout = rootview.findViewById(R.id.statistics_tab_layout_final);
         FragmentAdapter pagerAdapter = new FragmentAdapter(getChildFragmentManager(), getLifecycle());
         viewPager.setAdapter(pagerAdapter);
 
@@ -52,39 +54,14 @@ public class MissionsFragment extends Fragment {
                 currentTabIndex = position;  // 更新当前选中的 Tab 索引
             }
         });
-
         return rootview;
     }
     public void setCurrentActiveFragment(Fragment fragment) {
         this.currentActiveFragment = fragment;
         // 其他逻辑...
     }
-    public void handleTaskResult(Intent data) {
-        // 在开始处添加日志
-        Log.d("MissionsFragment", "handleTaskResult called");
-
-        // 从 Intent 中获取任务数据
-        String name = data.getStringExtra("name");
-        String points = data.getStringExtra("points");
-        int point=Integer.parseInt(points);
-
-        Fragment currentFragment = getChildFragmentManager().getFragments().get(currentTabIndex);
-        if (currentFragment instanceof DailyTaskFragment) {
-            Log.d("MissionsFragment", "Adding task to DailyTaskFragment");
-            ((DailyTaskFragment) currentFragment).addTaskItem(new TaskItem(name,  point,false));
-        } else if (currentFragment instanceof WeeklyTaskFragment) {
-            Log.d("MissionsFragment", "Adding task to WeeklyTaskFragment");
-            // 类似地处理 WeeklyTaskFragment
-            ((WeeklyTaskFragment) currentFragment).addTaskItem(new TaskItem(name, point,false));
-        } else if (currentFragment instanceof NormalTaskFragment) {
-            Log.d("MissionsFragment", "Adding task to NormalTaskFragment");
-            // 类似地处理 NormalTaskFragment
-            ((NormalTaskFragment) currentFragment).addTaskItem(new TaskItem(name, point,false));
-        }
-    }
-
     private static class FragmentAdapter extends FragmentStateAdapter {
-        private static final int NUM_TABS = 3;
+        private static final int NUM_TABS = 4;
 
         public FragmentAdapter(@NonNull FragmentManager fragmentManager, @NonNull Lifecycle lifecycle) {
             super(fragmentManager, lifecycle);
@@ -96,13 +73,16 @@ public class MissionsFragment extends Fragment {
             Fragment fragment;
             switch (position) {
                 case 0:
-                    fragment = new DailyTaskFragment();
+                    fragment = new DailyStatisticsFragment();
                     break;
                 case 1:
-                    fragment = new WeeklyTaskFragment();
+                    fragment = new WeeklyStatisticsFragment();
                     break;
                 case 2:
-                    fragment = new NormalTaskFragment();
+                    fragment = new MonthlyStatisticsFragment();
+                    break;
+                case 3:
+                    fragment = new AnnuallyStatisticsFragment();
                     break;
                 default:
                     throw new IllegalStateException("Unexpected position: " + position);
