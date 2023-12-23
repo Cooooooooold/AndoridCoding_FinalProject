@@ -1,13 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    android:orientation="vertical"
+    android:padding="16dp">
 
-    <TextView
-        android:id="@+id/textView2"
-        android:layout_width="wrap_content"
+    <!-- 头像 -->
+    <ImageView
+        android:id="@+id/imageViewProfile"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="30dp"
+        android:src="@drawable/person" />
+
+    <!-- 用户名 -->
+    <EditText
+        android:id="@+id/editTextUsername"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="TextView" />
-</FrameLayout>
+        android:hint="Username"
+        android:layout_marginTop="16dp"/>
+
+    <!-- 源码网站链接 -->
+    <Button
+        android:id="@+id/buttonSourceCode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="源码网站"
+        android:layout_marginTop="16dp"/>
+
+    <!-- 联系作者 -->
+    <Button
+        android:id="@+id/buttonContactAuthor"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="联系作者" />
+
+</LinearLayout>
